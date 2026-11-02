@@ -22,18 +22,12 @@ G_DEFINE_TYPE(FuUefiCapsuleBackendLinux,
 	      fu_uefi_capsule_backend_linux,
 	      FU_TYPE_UEFI_CAPSULE_BACKEND)
 
-/* yes, unsized uint_t */
-static guint
-fu_uefi_capsule_backend_linux_read(const gchar *path, const gchar *filename)
-{
-	return fu_uefi_read_file_as_uint64(path, filename);
-}
-
 static FuUefiCapsuleDevice *
 fu_uefi_capsule_backend_linux_device_new(FuUefiCapsuleBackendLinux *self,
 					 const gchar *physical_id,
 					 const gchar *path)
 {
+	guint64 tmp;
 	g_autoptr(FuUefiCapsuleDevice) dev = NULL;
 	g_autofree gchar *fw_class = NULL;
 	g_autofree gchar *fw_class_fn = NULL;
@@ -54,23 +48,29 @@ fu_uefi_capsule_backend_linux_device_new(FuUefiCapsuleBackendLinux *self,
 	dev = g_object_new(fu_uefi_capsule_backend_get_device_gtype(FU_UEFI_CAPSULE_BACKEND(self)),
 			   "fw-class",
 			   fw_class,
-			   "capsule-flags",
-			   fu_uefi_capsule_backend_linux_read(path, "capsule_flags"),
-			   "kind",
-			   fu_uefi_capsule_backend_linux_read(path, "fw_type"),
-			   "fw-version",
-			   fu_uefi_capsule_backend_linux_read(path, "fw_version"),
-			   "last-attempt-status",
-			   fu_uefi_capsule_backend_linux_read(path, "last_attempt_status"),
-			   "last-attempt-version",
-			   fu_uefi_capsule_backend_linux_read(path, "last_attempt_version"),
-			   "fw-version-lowest",
-			   fu_uefi_capsule_backend_linux_read(path, "lowest_supported_fw_version"),
 			   "fmp-hardware-instance",
 			   (guint64)0x0,
 			   "version-format",
 			   FWUPD_VERSION_FORMAT_NUMBER,
 			   NULL);
+	tmp = fu_uefi_read_file_as_uint64(path, "fw_type");
+	if (tmp != G_MAXUINT64)
+		fu_uefi_capsule_device_set_kind(dev, tmp);
+	tmp = fu_uefi_read_file_as_uint64(path, "capsule_flags");
+	if (tmp != G_MAXUINT64)
+		fu_uefi_capsule_device_set_capsule_flags(dev, tmp);
+	tmp = fu_uefi_read_file_as_uint64(path, "fw_version");
+	if (tmp != G_MAXUINT64)
+		fu_uefi_capsule_device_set_fw_version(dev, tmp);
+	tmp = fu_uefi_read_file_as_uint64(path, "last_attempt_status");
+	if (tmp != G_MAXUINT64)
+		fu_uefi_capsule_device_set_last_attempt_status(dev, tmp);
+	tmp = fu_uefi_read_file_as_uint64(path, "last_attempt_version");
+	if (tmp != G_MAXUINT64)
+		fu_uefi_capsule_device_set_last_attempt_version(dev, tmp);
+	tmp = fu_uefi_read_file_as_uint64(path, "lowest_supported_fw_version");
+	if (tmp != G_MAXUINT64)
+		fu_uefi_capsule_device_set_fw_version_lowest(dev, tmp);
 
 	/* u-boot for instance */
 	if (!self->use_rt_set_variable)
