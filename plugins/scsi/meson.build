@@ -1,4 +1,6 @@
 host_machine.system() in ['linux', 'android'] or subdir_done()
+# FuDellPsbDevice uses the SG_IO primitives, which are stubs without scsi/sg.h
+cc.has_header('scsi/sg.h', required: false) or subdir_done()
 
 cargs = ['-DG_LOG_DOMAIN="FuPluginScsi"']
 plugins += {
@@ -12,6 +14,7 @@ plugin_builtins += static_library(
   sources: [
     'fu-scsi-plugin.c',
     'fu-scsi-device.c',
+    'fu-dell-psb-device.c',
   ],
   include_directories: plugin_incdirs,
   c_args: [
