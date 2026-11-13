@@ -16,6 +16,4 @@ G_DECLARE_FINAL_TYPE(FuGenesysUsbhubDevice,
 		     FuUsbDevice)
 
 void
-fu_genesys_usbhub_device_set_proxy(FuGenesysUsbhubDevice *self, FuDevice *proxy);
-void
 fu_genesys_usbhub_device_set_flash_rw_size(FuGenesysUsbhubDevice *self, guint32 flash_rw_size);

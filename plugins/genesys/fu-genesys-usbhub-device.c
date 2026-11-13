@@ -138,20 +138,6 @@ struct _FuGenesysUsbhubDevice {
 
 G_DEFINE_TYPE(FuGenesysUsbhubDevice, fu_genesys_usbhub_device, FU_TYPE_USB_DEVICE)
 
-void
-fu_genesys_usbhub_device_set_proxy(FuGenesysUsbhubDevice *self, FuDevice *proxy)
-{
-	g_return_if_fail(FU_IS_GENESYS_USBHUB_DEVICE(self));
-	g_return_if_fail(FU_IS_GENESYS_HUBHID_DEVICE(proxy));
-
-	fu_device_add_private_flag(FU_DEVICE(self), FU_DEVICE_PRIVATE_FLAG_REFCOUNTED_PROXY);
-	fu_device_add_private_flag(FU_DEVICE(self), FU_DEVICE_PRIVATE_FLAG_USE_PROXY_FOR_OPEN);
-	fu_device_set_proxy(FU_DEVICE(self), proxy);
-
-	/* align usb max length(0xffff) to usb2 packet size(0x40) */
-	fu_genesys_usbhub_device_set_flash_rw_size(self, 0xffc0);
-}
-
 static gboolean
 fu_genesys_usbhub_device_ctrl_transfer(FuGenesysUsbhubDevice *self,
 				       FuProgress *progress,

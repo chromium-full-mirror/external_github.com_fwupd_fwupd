@@ -10,6 +10,7 @@
 
 #include "fu-genesys-common.h"
 #include "fu-genesys-hubhid-device.h"
+#include "fu-genesys-usbhub-device.h"
 
 #define GENESYS_HUBHID_REPORT_ID	  0
 #define GENESYS_HUBHID_REPORT_BYTE_LENGTH 0x40
@@ -366,6 +367,9 @@ static gboolean
 fu_genesys_hubhid_device_setup(FuDevice *device, GError **error)
 {
 	FuGenesysHubhidDevice *self = FU_GENESYS_HUBHID_DEVICE(device);
+	FuContext *ctx = fu_device_get_context(device);
+	g_autoptr(FuDevice) device_parent = NULL;
+	g_autoptr(FuDevice) device_usbhub = NULL;
 
 	/* validate by string token */
 	if (!fu_genesys_hubhid_device_validate_token(self, error)) {
@@ -379,6 +383,18 @@ fu_genesys_hubhid_device_setup(FuDevice *device, GError **error)
 		return FALSE;
 	}
 
+	/* assign the parent FuGenesysUsbhubDevice to be the proxy  */
+	device_parent = fu_device_get_backend_parent(device, error);
+	if (device_parent == NULL)
+		return FALSE;
+	device_usbhub = g_object_new(FU_TYPE_GENESYS_USBHUB_DEVICE, "context", ctx, NULL);
+	fu_device_incorporate(device_usbhub, device_parent, FU_DEVICE_INCORPORATE_FLAG_ALL);
+	fu_device_set_proxy(FU_DEVICE(self), device_usbhub);
+	fu_device_set_target(device_usbhub, FU_DEVICE(self));
+
+	/* align usb max length(0xffff) to usb2 packet size(0x40) */
+	fu_genesys_usbhub_device_set_flash_rw_size(FU_GENESYS_USBHUB_DEVICE(device_usbhub), 0xffc0);
+
 	/* success */
 	return TRUE;
 }
@@ -389,6 +405,9 @@ fu_genesys_hubhid_device_init(FuGenesysHubhidDevice *self)
 	self->support_report_pack = TRUE;
 	self->report_length = GENESYS_HUBHID_REPORT_BYTE_LENGTH;
 	self->max_report_pack_data_length = self->report_length - sizeof(FuGenesysUsbSetup);
+	fu_device_set_proxy_gtype(FU_DEVICE(self), FU_TYPE_GENESYS_USBHUB_DEVICE);
+	fu_device_add_private_flag(FU_DEVICE(self), FU_DEVICE_PRIVATE_FLAG_REFCOUNTED_PROXY);
+	fu_device_add_private_flag(FU_DEVICE(self), FU_DEVICE_PRIVATE_FLAG_USE_PROXY_FOR_OPEN);
 	fu_device_set_remove_delay(FU_DEVICE(self), FU_DEVICE_REMOVE_DELAY_RE_ENUMERATE);
 }
 
